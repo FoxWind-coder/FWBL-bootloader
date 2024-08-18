@@ -3,7 +3,33 @@
 // #define BOARDS_H
 
 // Определение платформы и соответствующих пинов
+#ifdef BOOTLOADER
+    #define FIRMWARE_FILE "firmware.bin"
+    #define PREFLASH "preloader.bin"
+    #define LOG_FILE "flashlog.txt"
+    #define PREFLASH_CURRENT "preloader.CUR"
+    #define FIRMWARE_CURRENT "firmware.CUR"
+    #define INTERNAL_FLASH_START_ADDRESS 0x0800C000
+    #define VERMARKER 0x0800BFF0
+    #define INTERNAL_FLASH_END_ADDRESS   0x080FFFFF // Адрес конца флеш-памяти для STM32F407VET6
+    // #define INTERNAL_FLASH_START_ADDRESS 0x08008000  // адрес начала памяти для прошивки после 32 КБ загрузчика
+    // в режиме build также выполняется проверка размера загрузчика, по умолчанию ограничение 32кб
+    // #define INTERNAL_FLASH_START_ADDRESS 0x08000000 
+#else 
+    #define VERMARKER 0x0800BFF0
+    #define FIRMWARE_FILE "bootloader.bin"
+    #define LOG_FILE "bootup.txt"
+    #define FIRMWARE_CURRENT "bootloader.cur"
+    #define INTERNAL_FLASH_START_ADDRESS 0x08000000
+    // #define APPLICATION_ADDRESS 0x0800C000
+    #define INTERNAL_FLASH_END_ADDRESS   0x0800C000 // Адрес конца флеш-памяти для STM32F407VET6
+#endif
 
+#define FLASH_SECTOR_SIZE 16384
+#define FLASH_SECTOR_SIZE_16K         16384       // Размер сектора 16 КБ
+#define FLASH_SECTOR_SIZE_64K         65536       // Размер сектора 64 КБ
+#define FLASH_SECTOR_SIZE_128K        131072      // Размер сектора 128 КБ
+#define BUFFER_SIZE 256         // Размер буфера
 
 #ifdef BOOTDISPLAY
 #define STM32
@@ -59,7 +85,7 @@
             #define SPI_TOUCH_FREQUENCY  2500000
             #define TOUCH_CS PE14     // Chip select pin (T_CS) of touch screen
 
-            #ifdef BOOTDISPLAY == MKS_TS35
+            #if BOOTDISPLAY == MKS_TS35
                 #define ST7796_DRIVER
                 #ifdef SHUI
                     #define BASE_SCREEN_HEIGHT 480
@@ -80,6 +106,7 @@
                         #define LEFT_MARGIN   10
                         #define LINE_HEIGHT   10 // Определяем высоту строки
             #endif
+            
         #endif
 
         #ifdef SPIFLASH
