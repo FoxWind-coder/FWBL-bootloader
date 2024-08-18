@@ -9,7 +9,7 @@
     #include <SPIFlash.h>
 #endif
 
-#include "boards.h"
+#include <boards.h>
 #include "flash.h"
 #include "display.h"
 #include "timerutl.h"

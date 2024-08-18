@@ -4,3 +4,4 @@
 .vscode/ipch
 .pio
 backup.cpp.bak
+firmware.bin
