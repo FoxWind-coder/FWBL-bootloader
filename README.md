@@ -1,4 +1,4 @@
-# 3D-printer-bootloader
+# FWBL Bootloader
 universal open source bootloader for 3d printer motherboards based on STM32F4xx
 it is possible to fully customize by adding new boards to the boards.h file, as well as assembling a preloader that can be used to update the main bootloader
 . The customization system allows you to run this loader on any motherboards based on stm32f407, as well as, if modified, on other stm32 processors
