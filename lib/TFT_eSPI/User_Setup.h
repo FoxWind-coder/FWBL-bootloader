@@ -21,7 +21,7 @@
 // ##################################################################################
 #define SKIPR_BOARD
 #define BOOTDISPLAY MKS_TS35
-#include <E:\docs\PlatformIO\Projects\w25 stm\src\boards.h>
+#include "boards.h"
 // Define STM32 to invoke optimised processor support (only for STM32)
 
 // Defining the STM32 board allows the library to optimise the performance
