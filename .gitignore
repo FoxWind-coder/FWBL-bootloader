@@ -3,5 +3,4 @@
 .vscode/launch.json
 .vscode/ipch
 .pio
-.pio/libdeps
 backup.cpp.bak
