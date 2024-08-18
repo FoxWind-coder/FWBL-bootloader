@@ -4,6 +4,7 @@
 #include <TFT_eSPI.h>
 #include "timerutl.h"
 #include "display.h"
+#include <cinttypes>  // Для PRIX32
 
 extern FsFile file;
 extern SPIFlash flash;
@@ -26,7 +27,7 @@ void logMessage(const char* message) {
 
 void logAddress(uint32_t address, uint8_t byte) {
     char buffer[50];
-    snprintf(buffer, sizeof(buffer), "[%lu] addr: 0x%08X byte: 0x%02X", millisSinceStart(), address, byte);
+    snprintf(buffer, sizeof(buffer), "[%lu] addr: 0x%" PRIX32 " byte: 0x%02X", millisSinceStart(), address, byte);
     logMessage(buffer);
 }
 
@@ -101,10 +102,10 @@ void flashFirmwareToInternalMemory() {
 
             if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, data) != HAL_OK) {
                 char logBuffer[256];
-                snprintf(logBuffer, sizeof(logBuffer), "Error programming flash memory at address: 0x%08X", address);
+                snprintf(logBuffer, sizeof(logBuffer), "Error programming flash memory at address: 0x%" PRIX32, address);
                 displayText(logBuffer);
                 logMessage(logBuffer);
-                snprintf(logBuffer, sizeof(logBuffer), "Data: 0x%08X", data);
+                snprintf(logBuffer, sizeof(logBuffer), "Data: 0x%" PRIX32, data);
                 displayText(logBuffer);
                 logMessage(logBuffer);
                 HAL_FLASH_Lock();
@@ -186,11 +187,12 @@ void readmarker(uint32_t startAddress, uint32_t endAddress) {
         sprintf(buffer + len, "%c", byte);
 
         // Если буфер заполнился или достигнут конец диапазона, выводим строку и очищаем буфер
-        if (len >= sizeof(buffer) - 2 || address == endAddress) {
+        if (static_cast<unsigned int>(len) >= sizeof(buffer) - 2 || address == endAddress) {
             displayText(buffer);
             tft.setTextColor(TFT_GREEN);
             memset(buffer, 0, sizeof(buffer)); // Очистка буфера для следующего вывода
         }
+
     }
 }
 

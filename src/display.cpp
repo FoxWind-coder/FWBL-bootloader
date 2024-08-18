@@ -101,10 +101,10 @@ void beep(int count, int interval) {
 
         while (beepCount < count) {
             unsigned long currentMillis = millis();
-            
+  
             if (isBeeping) {
                 // Проверяем, прошел ли интервал для выключения писка
-                if (currentMillis - previousMillis >= interval) {
+                if (currentMillis - previousMillis >= static_cast<unsigned long>(interval)) {
                     digitalWrite(BEEPER, LOW);  // Выключаем пищалку
                     previousMillis = currentMillis;  // Сохраняем текущее время
                     isBeeping = false;  // Готовы к следующему писку
@@ -112,7 +112,7 @@ void beep(int count, int interval) {
                 }
             } else {
                 // Проверяем, прошел ли интервал для включения следующего писка
-                if (currentMillis - previousMillis >= interval) {
+                if (currentMillis - previousMillis >= static_cast<unsigned long>(interval)) {
                     if (beepCount < count) {
                         digitalWrite(BEEPER, HIGH);  // Включаем пищалку
                         previousMillis = currentMillis;  // Сохраняем текущее время

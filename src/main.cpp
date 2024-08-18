@@ -107,7 +107,7 @@ void setup() {
             char jedecIDStr[9];  // 8 символов для HEX + 1 для null terminator
 
             // Форматируем JEDEC ID в шестнадцатеричный формат
-            snprintf(jedecIDStr, sizeof(jedecIDStr), "%06lX", jedecID);
+            snprintf(jedecIDStr, sizeof(jedecIDStr), "%06X", jedecID);
             // while (1);
             logMessage(jedecIDStr);
             // flash.blockErase4K(SPI_FLASH_START_ADDRESS);
@@ -193,7 +193,7 @@ void setup() {
 
     #ifdef SPIFLASH
         jedecID = flash.readDeviceId();  // Получаем JEDEC ID
-        snprintf(jedecIDStr, sizeof(jedecIDStr), "jedecID: %06lX", jedecID);
+        snprintf(jedecIDStr, sizeof(jedecIDStr), "jedecID: %06X", jedecID);
         displayText(jedecIDStr);
         // displayText("testlog0");
     #endif
