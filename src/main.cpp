@@ -164,7 +164,7 @@ void setup() {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_ORANGE);
     tft.setCursor(0,0);
-    tft.print("FoxLoader v0.1");
+    tft.print("With love by FoxWind ^_^");
     tft.setTextColor(TFT_GREEN);
     #ifndef SHUI
         tft.setTextColor(TFT_BLUE);
@@ -251,6 +251,30 @@ void setup() {
         logMessage("SD card init OK");
         displayText("SD init OK!");
         #ifdef BOOTLOADER
+            if (SD.exists(BACKUPNAME)) { //восстановление прошивки из бекапа
+                file = SD.open(BACKUPNAME, FILE_READ);
+                if (file) {
+                    logMessage("backup file opened.");
+                    displayText("Opened backup file");
+                    beep(3, 200);
+                    #ifdef BOOTDISPLAY
+                        updateProgressBar(0); 
+                    #endif
+                    flashFirmwareToInternalMemory();
+                    writemarker(BLVER, VERMARKER,INTERNAL_FLASH_START_ADDRESS);
+                    file.close();
+                    SD.remove(BACKUP_CURRENT);
+                    SD.rename(BACKUPNAME, BACKUP_CURRENT);
+                } else {
+                    logMessage("Failed to open backup file.");
+                    displayText("Failed to load backup");
+                    beep(2, 300);
+                    #ifdef BOOTDISPLAY
+                        updateProgressBar(155); 
+                    #endif
+                }
+            }
+        
         if (SD.exists(PREFLASH)) {
             file = SD.open(PREFLASH, FILE_READ);
             if (file) {
@@ -260,6 +284,8 @@ void setup() {
                 #ifdef BOOTDISPLAY
                     updateProgressBar(0); 
                 #endif
+                displayText("generating backup...");
+                backupFlash(INTERNAL_FLASH_START_ADDRESS, INTERNAL_FLASH_END_ADDRESS, BACKUPNAME);
                 flashFirmwareToInternalMemory();
                 file.close();
                 SD.remove(PREFLASH_CURRENT);
@@ -284,7 +310,7 @@ void setup() {
                     updateProgressBar(0); 
                 #endif
                 flashFirmwareToInternalMemory();
-                writemarker("FWBL v0.1", VERMARKER,INTERNAL_FLASH_START_ADDRESS);
+                writemarker(BLVER, VERMARKER,INTERNAL_FLASH_START_ADDRESS);
                 #ifndef BOOTLOADER
                 #endif
                 file.close();

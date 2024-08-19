@@ -10,6 +10,7 @@ extern FsFile file;
 extern SPIFlash flash;
 extern TFT_eSPI tft;
 extern uint8_t progress;
+extern SdFs SD;
 
 void logMessage(const char* message) {
     #ifdef DEBUG
@@ -215,4 +216,49 @@ void startApplication(uint32_t APPLICATION_ADDRESS) {
     Jump_To_Application();		                        //запускаем приложение	
 }
 
-// Реализация остальных функций...
+
+void backupFlash(uint32_t startAddress, uint32_t endAddress, const char* filename) {
+    #ifdef BOOTLOADER
+    // Открытие файла на SD карте для записи
+    FsFile backupFile = SD.open(filename, FILE_WRITE);
+    if (!backupFile) {
+        logMessage("Error: Failed to open file on SD card for backup.");
+        return;
+    }
+
+    // Буфер для чтения данных из флеш-памяти
+    uint8_t buffer[256];
+    uint32_t currentAddress = startAddress;
+    size_t totalBytes = endAddress - startAddress + 1;
+    size_t bytesRead = 0;
+
+    logMessage("Starting flash backup to SD card...");
+    displayText("Backing up flash");
+
+    while (currentAddress <= endAddress) {
+        // Чтение данных из флеш-памяти
+        size_t chunkSize = (endAddress - currentAddress + 1 > sizeof(buffer)) ? sizeof(buffer) : endAddress - currentAddress + 1;
+        memcpy(buffer, (uint8_t*)currentAddress, chunkSize);
+
+        // Запись данных на SD карту
+        backupFile.write(buffer, chunkSize);
+        bytesRead += chunkSize;
+        currentAddress += chunkSize;
+
+        // Обновление полосы прогресса каждые 5%
+        uint8_t newProgress = (bytesRead * 100) / totalBytes;
+        if (newProgress >= progress + 5) {
+            progress = newProgress;
+            updateProgressBar(progress, "backuping...");
+            char logBuffer[256];
+            snprintf(logBuffer, sizeof(logBuffer), "Backup progress: %d%%", progress);
+            logMessage(logBuffer);
+        }
+    }
+
+    backupFile.close();
+    logMessage("Flash backup completed successfully.");
+    displayText("Backup complete");
+    #endif
+}
+

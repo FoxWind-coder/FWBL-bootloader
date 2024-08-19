@@ -1,7 +1,7 @@
 #pragma once
 // #ifndef BOARDS_H
 // #define BOARDS_H
-
+#define BLVER  "FWBL v0.2 BETA"
 // Определение платформы и соответствующих пинов
 #ifdef BOOTLOADER
     #define FIRMWARE_FILE "firmware.bin"
@@ -9,6 +9,8 @@
     #define LOG_FILE "flashlog.txt"
     #define PREFLASH_CURRENT "preloader.CUR"
     #define FIRMWARE_CURRENT "firmware.CUR"
+    #define BACKUPNAME "backup.bin"
+    #define BACKUP_CURRENT "backup.CUR"
     #define INTERNAL_FLASH_START_ADDRESS 0x0800C000
     #define VERMARKER 0x0800BFF0
     #define INTERNAL_FLASH_END_ADDRESS   0x080FFFFF // Адрес конца флеш-памяти для STM32F407VET6

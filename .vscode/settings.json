@@ -97,7 +97,8 @@
   "files.associations": {
     "*.tcc": "cpp",
     "fstream": "cpp",
-    "*.bak": "c"
+    "*.bak": "c",
+    "glcdfont.c": "cpp"
   },
   "cmake.configureOnOpen": false
 }
