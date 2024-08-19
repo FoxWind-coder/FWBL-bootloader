@@ -285,7 +285,13 @@ void setup() {
                     updateProgressBar(0); 
                 #endif
                 displayText("generating backup...");
-                backupFlash(INTERNAL_FLASH_START_ADDRESS, INTERNAL_FLASH_END_ADDRESS, BACKUPNAME);
+
+                if(SD.exists(FIRMWARE_FILE)){
+                    displayText("firmware found. backup not generated");
+                }else{
+                    backupFlash(INTERNAL_FLASH_START_ADDRESS, INTERNAL_FLASH_END_ADDRESS, BACKUPNAME);  
+                }
+                
                 flashFirmwareToInternalMemory();
                 file.close();
                 SD.remove(PREFLASH_CURRENT);
