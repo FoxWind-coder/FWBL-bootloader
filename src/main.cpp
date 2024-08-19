@@ -274,7 +274,7 @@ void setup() {
                     #endif
                 }
             }
-        
+
         if (SD.exists(PREFLASH)) {
             file = SD.open(PREFLASH, FILE_READ);
             if (file) {
