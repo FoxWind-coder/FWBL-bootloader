@@ -110,13 +110,6 @@ void setup() {
             snprintf(jedecIDStr, sizeof(jedecIDStr), "%06X", jedecID);
             // while (1);
             logMessage(jedecIDStr);
-            // flash.blockErase4K(SPI_FLASH_START_ADDRESS);
-            // flash.blockErase64K(SPI_FLASH_START_ADDRESS);
-            // flash.writeByte(DCFBYTE, 0xFD);
-            // flash.writeByte(BEEPBYTE, 0xFB);
-            // uint8_t configByte = flash.readByte(DCFBYTE);
-            // uint8_t beepconf = flash.readByte(BEEPBYTE);
-            // Serial.println(flash.readByte(BEEPBYTE));
             #ifdef SHUI
             flash.readBytes(0, &header, sizeof(Header));
             if (strncmp(header.header, "SHUI", 4) == 0) {
