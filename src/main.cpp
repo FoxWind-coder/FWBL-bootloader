@@ -14,6 +14,11 @@
 #include "display.h"
 #include "timerutl.h"
 
+#ifdef WIFI
+#include <HardwareSerial.h>
+HardwareSerial SerialESP(SERIAL_PORT);
+#endif
+
 #ifdef BOOTDISPLAY
     #include <TFT_eSPI.h>
     TFT_eSPI tft = TFT_eSPI();
@@ -96,6 +101,15 @@ void setup() {
         SPI.setMOSI(diPin);
         SPI.setSCLK(clkPin);
         SPI.begin();
+    #endif
+
+    #ifdef WIFI   
+    pinMode(RST_PIN, OUTPUT);
+    pinMode(GPIO0_PIN, OUTPUT);
+    
+    SerialESP.setRx(WIFIRX);
+    SerialESP.setTx(WIFITX);
+    SerialESP.begin(WIFIBAUD);
     #endif
 
     #ifdef SPIFLASH
@@ -247,6 +261,33 @@ void setup() {
         logMessage("SD card init OK");
         displayText("SD init OK!");
         #ifdef BOOTLOADER
+
+        #ifdef WIFI
+            if (SD.exists(WIFI_FILE)) { //восстановление прошивки из бекапа
+                file = SD.open(WIFI_FILE, FILE_READ);
+                if (file) {
+                    logMessage("wifi file opened.");
+                    displayText("Opened wifi file");
+                    beep(2, 200);
+                    #ifdef BOOTDISPLAY
+                        updateProgressBar(0); 
+                    #endif
+                    // backupESP8266(WIFIBACKUP);
+                    flashESP8266(WIFI_FILE);
+                    file.close();
+                    SD.remove(WIFI_CUR);
+                    SD.rename(WIFI_FILE, WIFI_CUR);
+                } else {
+                    logMessage("Failed to open wifi file.");
+                    displayText("Failed to load wifi frw");
+                    beep(2, 300);
+                    #ifdef BOOTDISPLAY
+                        updateProgressBar(155); 
+                    #endif
+                }
+            }
+        #endif
+
             if (SD.exists(BACKUPNAME)) { //восстановление прошивки из бекапа
                 file = SD.open(BACKUPNAME, FILE_READ);
                 if (file) {

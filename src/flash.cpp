@@ -11,6 +11,8 @@ extern SPIFlash flash;
 extern TFT_eSPI tft;
 extern uint8_t progress;
 extern SdFs SD;
+extern HardwareSerial SerialESP; 
+#define BLOCK_SIZE 256
 
 void logMessage(const char* message) {
     #ifdef DEBUG
@@ -125,7 +127,7 @@ void flashFirmwareToInternalMemory() {
         uint8_t newProgress = (bytesWritten * 100) / totalBytes;
         if (newProgress >= progress + 5) {
             progress = newProgress;
-            updateProgressBar(progress);
+            updateProgressBar(progress, "flashing...");
             char logBuffer[256];
             snprintf(logBuffer, sizeof(logBuffer), "Progress: %d%%", progress);
             logMessage(logBuffer);
@@ -249,7 +251,7 @@ void backupFlash(uint32_t startAddress, uint32_t endAddress, const char* filenam
         uint8_t newProgress = (bytesRead * 100) / totalBytes;
         if (newProgress >= progress + 5) {
             progress = newProgress;
-            updateProgressBar(progress, "backuping...");
+            updateProgressBar(progress, "backing up...");
             char logBuffer[256];
             snprintf(logBuffer, sizeof(logBuffer), "Backup progress: %d%%", progress);
             logMessage(logBuffer);
@@ -262,3 +264,150 @@ void backupFlash(uint32_t startAddress, uint32_t endAddress, const char* filenam
     #endif
 }
 
+
+void flashESP8266(const char* filename) {
+    #ifdef WIFI
+    // Входим в режим загрузки
+    displayText("Entering boot mode...");
+    digitalWrite(GPIO0_PIN, LOW);  // GPIO0 -> LOW для режима загрузки
+    digitalWrite(RST_PIN, LOW);    // Сброс ESP8266
+    delay(100);
+    digitalWrite(RST_PIN, HIGH);   // Снимаем сброс
+    
+    // Проверяем наличие файла прошивки
+    if (!SD.exists(filename)) {
+        displayText("Firmware file not found!");
+        return;
+    }
+
+    // Открываем файл прошивки
+    file = SD.open(filename, O_RDONLY);
+    if (!file) {
+        displayText("Failed to open firmware file!");
+        return;
+    }
+
+    displayText("Flashing started...");
+    
+    // Получаем размер файла для расчета прогресса
+    uint32_t fileSize = file.size();
+    uint32_t bytesRead = 0;
+    uint8_t progress = 0;
+    bool success = true;
+
+    uint8_t buffer[BLOCK_SIZE];
+    uint8_t verifyBuffer[BLOCK_SIZE];
+
+    // Чтение и отправка файла прошивки
+    while (file.available()) {
+        // Чтение блока данных
+        uint16_t bytesToRead = min((uint32_t)BLOCK_SIZE, fileSize - bytesRead);
+        file.read(buffer, bytesToRead);
+        
+        // Отправка блока данных
+        SerialESP.write(buffer, bytesToRead);
+
+        // Считывание и проверка блока данных
+        delay(10); // Даем время для записи данных
+        SerialESP.flush();
+        SerialESP.readBytes(verifyBuffer, bytesToRead);
+        
+        // Сравнение записанных и считанных данных
+        for (uint16_t i = 0; i < bytesToRead; i++) {
+            if (buffer[i] != verifyBuffer[i]) {
+                displayText("Verification failed!");
+                success = false;
+                break;
+            }
+        }
+        if (!success) break;
+
+        bytesRead += bytesToRead;
+
+        // Обновляем прогрессбар
+        uint8_t newProgress = (bytesRead * 100) / fileSize;
+        if (newProgress > progress) {
+            progress = newProgress;
+            updateProgressBar(progress);
+        }
+    }
+
+    // Закрываем файл
+    file.close();
+    
+    if (success) {
+        displayText("Flashing completed successfully!");
+        updateProgressBar(100);
+    }
+
+    // Получаем информацию о модуле ESP
+    getESPInfo();
+}
+
+// Функция для получения и вывода информации о модуле ESP
+void getESPInfo() {
+    SerialESP.print("AT+GMR\r\n"); // Команда для получения информации о прошивке
+    delay(1000); // Ждем ответа от модуля
+
+    if (SerialESP.available()) {
+        String espInfo = SerialESP.readString();
+        displayText(espInfo.c_str());  // Выводим информацию на экран
+    } else {
+        displayText("Failed to get ESP info");
+    }
+    #endif
+}
+
+void backupESP8266(const char* backupFilename) {
+    #ifdef WIFI
+    // Входим в режим загрузки
+    displayText("Entering boot mode...");
+    digitalWrite(GPIO0_PIN, LOW);  // GPIO0 -> LOW для режима загрузки
+    digitalWrite(RST_PIN, LOW);    // Сброс ESP8266
+    delay(100);
+    digitalWrite(RST_PIN, HIGH);   // Снимаем сброс
+    
+    // Ожидаем готовности ESP8266
+    delay(1000);
+    
+    // Открываем файл для записи бекапа
+    file = SD.open(backupFilename, O_CREAT | O_WRITE | O_TRUNC);
+    if (!file) {
+        displayText("Failed to open backup file!");
+        return;
+    }
+
+    displayText("Backing up firmware...");
+    
+    uint8_t buffer[READ_BLOCK_SIZE];
+    uint32_t address = 0;
+    uint32_t bytesRead = 0;
+    uint8_t progress = 0;
+    
+    while (address < FLASH_SIZE) {
+        // Формируем команду чтения флеш-памяти
+        SerialESP.write(0x03); // Команда чтения (READ)
+        SerialESP.write((address >> 16) & 0xFF); // Старший байт адреса
+        SerialESP.write((address >> 8) & 0xFF);  // Средний байт адреса
+        SerialESP.write(address & 0xFF);         // Младший байт адреса
+
+        // Читаем данные с ESP8266
+        int len = SerialESP.readBytes(buffer, READ_BLOCK_SIZE);
+        file.write(buffer, len);
+        bytesRead += len;
+        address += len;
+
+        // Обновляем прогрессбар
+        uint8_t newProgress = (bytesRead * 100) / FLASH_SIZE;
+        if (newProgress > progress) {
+            progress = newProgress;
+            updateProgressBar(progress);
+        }
+    }
+
+    // Закрываем файл
+    file.close();
+    displayText("Backup completed!");
+    updateProgressBar(100);
+    #endif
+}

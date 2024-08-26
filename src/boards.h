@@ -4,6 +4,10 @@
 #define BLVER  "FWBL v0.2 BETA"
 // Определение платформы и соответствующих пинов
 #ifdef BOOTLOADER
+    #define WIFI
+    #define WIFI_FILE "esp8266.bin"
+    #define WIFIBACKUP "wifibackup.bin"
+    #define WIFI_CUR "esp8266.cur"
     #define FIRMWARE_FILE "firmware.bin"
     #define PREFLASH "preloader.bin"
     #define LOG_FILE "flashlog.txt"
@@ -67,6 +71,18 @@
         #error "displays not configured. you need do it urself"
     #endif
 #elif defined(RN3_BOARD)
+
+    #ifdef WIFI
+    #define SERIAL_PORT 2
+    #define RST_PIN PE9
+    #define GPIO0_PIN PC13
+    #define WIFIRX PA10
+    #define WIFITX PA9
+    #define WIFIBAUD 115200
+    #define FLASH_SIZE 1048576  // Размер флеш-памяти ESP8266 (например, 1 МБ)
+    #define READ_BLOCK_SIZE 256 // Размер блока чтения за один раз
+    #endif
+
     #define SD_CS_PIN PC9
         #define SOFT_MISO_PIN PC11
         #define SOFT_MOSI_PIN PC12
