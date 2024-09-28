@@ -12,6 +12,8 @@ extern TFT_eSPI tft;
 extern uint8_t progress;
 extern SdFs SD;
 extern HardwareSerial SerialESP; 
+extern int logstate;
+
 #define BLOCK_SIZE 256
 
 void logMessage(const char* message) {
@@ -20,10 +22,12 @@ void logMessage(const char* message) {
     #endif
 
     #ifdef SDLOG
+        if(logstate == 1){
         File logFile = SD.open(LOG_FILE, FILE_WRITE);
         if (logFile) {
             logFile.println(message);
             logFile.close();
+        }
         }
     #endif
 }

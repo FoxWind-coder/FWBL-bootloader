@@ -3,8 +3,10 @@
 // #define BOARDS_H
 #define BLVER  "FWBL v0.2 BETA"
 // Определение платформы и соответствующих пинов
+#define POWERHOLD
+
 #ifdef BOOTLOADER
-    #define WIFI
+    // #define WIFI
     #define WIFI_FILE "esp8266.bin"
     #define WIFIBACKUP "wifibackup.bin"
     #define WIFI_CUR "esp8266.cur"
@@ -70,6 +72,7 @@
     #ifdef BOOTDISPLAY
         #error "displays not configured. you need do it urself"
     #endif
+
 #elif defined(RN3_BOARD)
 
     #ifdef WIFI
@@ -82,7 +85,7 @@
     #define FLASH_SIZE 1048576  // Размер флеш-памяти ESP8266 (например, 1 МБ)
     #define READ_BLOCK_SIZE 256 // Размер блока чтения за один раз
     #endif
-
+    #define SDLOG
     #define SD_CS_PIN PC9
         #define SOFT_MISO_PIN PC11
         #define SOFT_MOSI_PIN PC12
@@ -106,6 +109,7 @@
             #if BOOTDISPLAY == MKS_TS35
                 #define ST7796_DRIVER
                 #ifdef SHUI
+                    #define setaddr 0
                     #define BASE_SCREEN_HEIGHT 480
                     #define BASE_SCREEN_WIDTH 320
                 #else
@@ -141,6 +145,10 @@
             #define BASE_BEEPSTATE 1
         #endif
 
+        #ifdef POWERHOLD
+        #define HOLD_PIN PB2
+        #endif
+
         #ifdef DEBUG  
             #define DEBUG_RX PB11// включение отладки через serial 
             #define DEBUG_TX PB10
@@ -148,6 +156,7 @@
         #else
             #define NDEBUG
         #endif
+        
 #elif defined(SKIPR_BOARD)
     #define SD_CS_PIN PC9
     #define SOFT_MISO_PIN PC11

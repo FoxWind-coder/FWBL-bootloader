@@ -1,0 +1,17 @@
+            if (strncmp(header.header, "SHUI", 4) == 0) {
+                displayText("SHUI detected!");
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "Signature: %02X", header.signature);
+                displayText(buffer);
+
+                snprintf(buffer, sizeof(buffer), "Rotate Display: %s", header.flags.rotate_display ? "Enabled" : "Disabled");
+                displayText(buffer);
+
+                snprintf(buffer, sizeof(buffer), "USB Primary: %s", header.flags.is_usb_primary ? "Yes" : "No");
+                displayText(buffer);
+
+                snprintf(buffer, sizeof(buffer), "Buzzer: %s", (header.flags.bootloader_beeper & (1 << 2)) ? "Enabled" : "Disabled");
+                displayText(buffer);
+            } else {
+                displayText("SHUI not detected!");
+            }

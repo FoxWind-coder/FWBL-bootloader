@@ -5,6 +5,8 @@
 #include <cstdio> // Для snprintf
 
 #ifdef SPIFLASH
+    #define FILE_NAME "spitest"
+    #define BUFFER_SIZE 80
     #include <SPI.h>
     #include <SPIFlash.h>
 #endif
@@ -26,6 +28,14 @@ HardwareSerial SerialESP(SERIAL_PORT);
 #endif
 
 #define SD_FAT_TYPE 3
+
+#ifdef SDLOG
+int logstate = 0;
+#endif
+
+#ifdef POWERHOLD
+int pwrhold = 0;
+#endif
 
 typedef void (*pFunction)(void);
 SoftSpiDriver<SOFT_MISO_PIN, SOFT_MOSI_PIN, SOFT_SCK_PIN> softSpi;
@@ -61,24 +71,83 @@ uint8_t BEEPSTATE = BASE_BEEPSTATE;
 #endif
 
 #ifdef SPIFLASH
-struct Header {
-    char header[4];
-    uint8_t signature;
+// old header
+// struct Header {
+//     char header[4];
+//     uint8_t signature;
+//     union {
+//         struct {
+//             bool rotate_display: 1;
+//             bool is_usb_primary: 1;
+//             bool reserved: 6; // Остальные 6 бит зарезервированы
+//         };
+//         uint8_t v;  // Используем 8-битное поле, чтобы не занимать лишнюю память
+//     } flags;
+// };
+
+struct Header{
+    char        header[4];
+    uint8_t   signature;
     union {
         struct {
             bool rotate_display: 1;
-            bool is_usb_primary: 1;
-            bool reserved: 6; // Остальные 6 бит зарезервированы
+            bool is_usb_primary:1;
+            bool bootloader_beeper:1;
+            bool bootloader_power_lock:1;
+            bool bootloader_log:1;
         };
-        uint8_t v;  // Используем 8-битное поле, чтобы не занимать лишнюю память
-    } flags;
-};
+    };
+    };
 
 word jedecID;
 char jedecIDStr[16];
 #endif
 unsigned long startMillis;
 
+void saveAndCompareFlashData() {
+    uint8_t buffer[BUFFER_SIZE];
+    uint8_t existingData[BUFFER_SIZE];
+    
+    // Шаг 1: Считываем первые 80 байт из SPI flash
+    flash.readBytes(0, buffer, BUFFER_SIZE);  // Предполагается, что адрес чтения - 0
+
+    // Шаг 2: Открываем файл на SD-карте
+    if (file.open(FILE_NAME, FILE_WRITE)) {
+        file.write(buffer, BUFFER_SIZE);
+        file.close();
+        displayText("Data saved to SD card.");
+    } else {
+        displayText("Failed to open file for writing.");
+        return;
+    }
+
+    // Шаг 3: Проверяем существование файла для сравнения
+    if (file.open(FILE_NAME, FILE_READ)) {
+        file.read(existingData, BUFFER_SIZE);
+        file.close();
+
+        // Шаг 4: Сравниваем данные
+        bool dataModified = false;
+        String modifiedBytes = "";
+
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            if (buffer[i] != existingData[i]) {
+                dataModified = true;
+                modifiedBytes += String(i) + ": " + String(buffer[i], DEC) + " (was: " + String(existingData[i], DEC) + ")\n";
+            }
+        }
+
+        // Шаг 5: Выводим результат сравнения
+        if (dataModified) {
+            String outputMessage = "Modified bytes:" + modifiedBytes;
+            displayText(outputMessage.c_str());
+        } else {
+            displayText("No changes detected.");
+        }
+    } else {
+        displayText("Failed to open file for reading.");
+    }
+}
 
 void setup() {  
     #ifndef BOOTLOADER
@@ -127,10 +196,11 @@ void setup() {
             // while (1);
             logMessage(jedecIDStr);
             
-            #ifdef SHUI
-            flash.readBytes(0, &header, sizeof(Header));
+        #ifdef SHUI
+            flash.readBytes(setaddr, &header, sizeof(Header)); // Читаем данные в структуру Header
             if (strncmp(header.header, "SHUI", 4) == 0) {
-                if (header.flags.rotate_display) {
+                // Проверяем флаги с помощью битовых операций
+                if (header.rotate_display) {
                     ROTATION = 1; // нормальная ориентация
                     SCREEN_HEIGHT = BASE_SCREEN_WIDTH;
                     SCREEN_WIDTH = BASE_SCREEN_HEIGHT;
@@ -140,24 +210,36 @@ void setup() {
                     SCREEN_WIDTH = BASE_SCREEN_HEIGHT;
                 }
 
-                if (header.flags.v & (1 << 2)) {
-                    BEEPSTATE = 1; // Включение зуммера
-                } else {
-                    BEEPSTATE = 0; // Отключение зуммера
-                }
-            } 
-            else {
-            
+                // Установка состояния логирования
+                #ifdef SDLOG
+                    logstate = header.bootloader_log ? 1 : 0; // лог на карту или без лога
+                #endif
+
+                #ifdef POWERHOLD
+                    pwrhold = header.bootloader_power_lock ? 1 : 0;
+                      if (pwrhold == 1) {
+                        pinMode(HOLD_PIN, OUTPUT);
+                        digitalWrite(HOLD_PIN, HIGH); // Устанавливаем высокий уровень
+                    } else {
+                        digitalWrite(HOLD_PIN, LOW); // Устанавливаем низкий уровень
+                    }
+                #endif
+
+                // Установка состояния зуммера
+                BEEPSTATE = header.bootloader_beeper ? 1 : 0; // Включение или отключение зуммера
+            } else {
                 ROTATION = 1;
                 BEEPSTATE = 0;
+
                 // SCREEN_HEIGHT = BASE_SCREEN_WIDTH;
                 // SCREEN_WIDTH = BASE_SCREEN_HEIGHT;
-
             }
-            #else
-                ROTATION = 1;
-                BEEPSTATE = 0;
-            #endif
+        #else
+            // Значения по умолчанию, если SHUI не определен
+            ROTATION = 1;
+            BEEPSTATE = 0;
+        #endif
+
 
 
         }
@@ -201,29 +283,34 @@ void setup() {
         tft.setTextColor(TFT_GREEN);
     #endif
 
-    #ifdef SPIFLASH
-        jedecID = flash.readDeviceId();  // Получаем JEDEC ID
-        snprintf(jedecIDStr, sizeof(jedecIDStr), "jedecID: %06X", jedecID);
+    #ifndef SPIFLASH
+        displayText("spi flash not defined");
+    #else
+        // jedecID = flash.readDeviceId();  // Получаем JEDEC ID
+        // snprintf(jedecIDStr, sizeof(jedecIDStr), "jedecID: %06X", jedecID);
         displayText(jedecIDStr);
         // displayText("testlog0");
     #endif
 
     #endif
         #ifdef SHUI
-            flash.readBytes(0, &header, sizeof(Header));
+            // flash.readBytes(setaddr, &header, sizeof(Header));
             if (strncmp(header.header, "SHUI", 4) == 0) {
                 displayText("SHUI detected!");
                 char buffer[256];
                 snprintf(buffer, sizeof(buffer), "Signature: %02X", header.signature);
                 displayText(buffer);
 
-                snprintf(buffer, sizeof(buffer), "Rotate Display: %s", header.flags.rotate_display ? "Enabled" : "Disabled");
+                snprintf(buffer, sizeof(buffer), "Rotate Display: %s", header.rotate_display ? "true" : "false");
                 displayText(buffer);
 
-                snprintf(buffer, sizeof(buffer), "USB Primary: %s", header.flags.is_usb_primary ? "Yes" : "No");
+                snprintf(buffer, sizeof(buffer), "USB Primary: %s", header.is_usb_primary ? "true" : "false");
                 displayText(buffer);
 
-                snprintf(buffer, sizeof(buffer), "Buzzer: %s", (header.flags.v & (1 << 2)) ? "Enabled" : "Disabled");
+                snprintf(buffer, sizeof(buffer), "Buzzer: %s", header.bootloader_beeper ? "true" : "false");
+                displayText(buffer);
+
+                snprintf(buffer, sizeof(buffer), "Logging: %s", header.bootloader_log ? "true" : "false");
                 displayText(buffer);
             } else {
                 displayText("SHUI not detected!");
@@ -261,6 +348,10 @@ void setup() {
         logMessage("SD card init OK");
         displayText("SD init OK!");
         #ifdef BOOTLOADER
+
+
+        // saveAndCompareFlashData();
+
 
         #ifdef WIFI
             if (SD.exists(WIFI_FILE)) { //восстановление прошивки из бекапа
