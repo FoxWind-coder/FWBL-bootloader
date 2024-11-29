@@ -98,7 +98,9 @@
     "*.tcc": "cpp",
     "fstream": "cpp",
     "*.bak": "c",
-    "glcdfont.c": "cpp"
+    "glcdfont.c": "cpp",
+    "cstdio": "cpp",
+    "tft_espi_generic.c": "cpp"
   },
   "cmake.configureOnOpen": false
 }

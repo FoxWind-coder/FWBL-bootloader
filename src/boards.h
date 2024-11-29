@@ -3,10 +3,11 @@
 // #define BOARDS_H
 #define BLVER  "FWBL v0.2 BETA"
 // Определение платформы и соответствующих пинов
-#define POWERHOLD
+// #define POWERHOLD
 
 #ifdef BOOTLOADER
     // #define WIFI
+    // #define DEBUG
     #define WIFI_FILE "esp8266.bin"
     #define WIFIBACKUP "wifibackup.bin"
     #define WIFI_CUR "esp8266.cur"
@@ -85,6 +86,7 @@
     #define FLASH_SIZE 1048576  // Размер флеш-памяти ESP8266 (например, 1 МБ)
     #define READ_BLOCK_SIZE 256 // Размер блока чтения за один раз
     #endif
+    
     #define SDLOG
     #define SD_CS_PIN PC9
         #define SOFT_MISO_PIN PC11
@@ -207,6 +209,18 @@
     #endif
 #else
     #error "board not selected"
+#endif
+
+#if defined(USBSERDBG) && !defined(USBD_USE_CDC)
+    #error "USBSERDBG is defined, but USBD_USE_CDC is missing!"
+#endif
+
+#if defined(USBSERDBG) && !defined(USBCON)
+    #error "USBSERDBG is defined, but USBCON is missing!"
+#endif
+
+#if !defined(USBSERDBG) && (defined(USBD_USE_CDC) || defined(USBCON))
+    #error "USBSERDBG is not defined, but USBD_USE_CDC or USBCON is defined!"
 #endif
 
 // #endif // BOARDS_H

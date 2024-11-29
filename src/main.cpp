@@ -1,8 +1,14 @@
 #define SPI_DRIVER_SELECT 2
 #include <Arduino.h>
-#include <SdFat.h>
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx.h"
+#include <SdFat.h>
+#include <usbd_cdc_if.h>
 #include <cstdio> // Для snprintf
+
+#ifdef USBSERDBG
+#include <USBSerial.h>
+#endif
 
 #ifdef SPIFLASH
     #define FILE_NAME "spitest"
@@ -318,12 +324,30 @@ void setup() {
         #endif
 
     #ifdef DEBUG
-    Serial.setRx(DEBUG_RX); 
-    Serial.setTx(DEBUG_TX);
-    Serial.begin(SERIAL_BAUD);
-    while (!Serial) { delay(10); } 
-    #warning "debug will slow down bootloader functions! remove -DDEBUG for release "
-    displayText("Be careful! debug ENABLED");
+        #warning "debug will slow down bootloader functions! remove -DDEBUG for release "
+        #ifndef USBSERDBG
+            Serial.setRx(DEBUG_RX); 
+            Serial.setTx(DEBUG_TX);
+        #endif
+
+        Serial.begin(SERIAL_BAUD);
+        // while (true)
+        // {
+        //    Serial.println("24234");
+        //    delay(100);
+        // }
+        displayText("Be careful! debug ENABLED");
+        displayText("Waiting for debugger...");
+        unsigned long timeout = millis() + 10000;  // Устанавливаем таймаут на 10 секунд
+        while (!Serial && millis() < timeout) {  // Ожидаем подключения или 10 секунд
+        }
+
+        if (Serial) {
+            logMessage("Debugger connected");  // Если подключение установлено
+        } else {
+            logMessage("debug timeout");  // Если подключение не установлено за 10 секунд
+        }
+       
     #endif
 
     startMillis = millis();
@@ -361,7 +385,7 @@ void setup() {
                     displayText("Opened wifi file");
                     beep(2, 200);
                     #ifdef BOOTDISPLAY
-                        updateProgressBar(0); 
+                        updateProgres#ifdef USBSERsBar(0); 
                     #endif
                     // backupESP8266(WIFIBACKUP);
                     flashESP8266(WIFI_FILE);
