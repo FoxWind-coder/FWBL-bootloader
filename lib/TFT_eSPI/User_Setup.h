@@ -19,8 +19,8 @@
 // Section 1. Call up the right driver file and any options for it
 //
 // ##################################################################################
-#define SKIPR_BOARD
-#define BOOTDISPLAY MKS_TS35
+// #define SKIPR_BOARD
+// #define BOOTDISPLAY MKS_TS35
 // #include <E:\docs\PlatformIO\Projects\w25 stm\src\boards.h>
 // Define STM32 to invoke optimised processor support (only for STM32)
 

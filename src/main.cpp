@@ -280,7 +280,7 @@ void setup() {
         tft.setTextColor(TFT_GREEN);
     #endif
     readmarker(VERMARKER, INTERNAL_FLASH_START_ADDRESS);
-    updateProgressBar(0); 
+    updateProgressBar(0, "init OK"); 
 
     #ifndef BOOTLOADER
         tft.setTextColor(TFT_RED);
