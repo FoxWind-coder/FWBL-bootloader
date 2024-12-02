@@ -242,8 +242,13 @@ void setup() {
             }
         #else
             // Значения по умолчанию, если SHUI не определен
-            ROTATION = 1;
-            BEEPSTATE = 0;
+            #ifndef BASE_BEEPSTATE
+                BEEPSTATE = 0;
+            #endif
+
+            #ifndef BASE_ROTATION
+                ROTATION = 1;
+            #endif
         #endif
 
 
@@ -265,32 +270,24 @@ void setup() {
     tft.print("With love by FoxWind ^_^");
     tft.setTextColor(TFT_GREEN);
     #ifndef SHUI
-        tft.setTextColor(TFT_BLUE);
-        displayText("builded as universal bootloader");
-        tft.setTextColor(TFT_GREEN);
+        displayText("builded as universal bootloader", TFT_BLUE);
     #else
-        tft.setTextColor(TFT_BLUE);
-        displayText("builded as SHUI bootloader");
-        tft.setTextColor(TFT_GREEN);
+        displayText("builded as SHUI bootloader", TFT_BLUE);
     #endif
 
     #ifdef BETA
-        tft.setTextColor(TFT_RED);
-        displayText("this is BETA build! Use at ur own risk!");
-        tft.setTextColor(TFT_GREEN);
+        displayText("this is BETA build! Use at ur own risk!", TFT_RED);
     #endif
     readmarker(VERMARKER, INTERNAL_FLASH_START_ADDRESS);
     updateProgressBar(0, "init OK"); 
 
     #ifndef BOOTLOADER
-        tft.setTextColor(TFT_RED);
-        displayText("UPDATING BOOTLOADER!!!");
-        displayText("DO NOT TURN OFF SYSTEM");
-        tft.setTextColor(TFT_GREEN);
+        displayText("UPDATING BOOTLOADER!!!", TFT_RED);
+        displayText("DO NOT TURN OFF SYSTEM", TFT_RED);
     #endif
 
     #ifndef SPIFLASH
-        displayText("spi flash not defined");
+        displayText("spi flash not defined", TFT_YELLOW);
     #else
         // jedecID = flash.readDeviceId();  // Получаем JEDEC ID
         // snprintf(jedecIDStr, sizeof(jedecIDStr), "jedecID: %06X", jedecID);
@@ -385,7 +382,7 @@ void setup() {
                     displayText("Opened wifi file");
                     beep(2, 200);
                     #ifdef BOOTDISPLAY
-                        updateProgres#ifdef USBSERsBar(0); 
+                        updateProgressBar(0); 
                     #endif
                     // backupESP8266(WIFIBACKUP);
                     flashESP8266(WIFI_FILE);

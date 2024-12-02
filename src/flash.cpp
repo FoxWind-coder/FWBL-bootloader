@@ -57,12 +57,12 @@ void flashFirmwareToInternalMemory() {
         eraseInitStruct.Sector = startSector;
         eraseInitStruct.NbSectors = (endSector <= 3) ? (endSector - startSector + 1) : (4 - startSector);
         eraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-        displayText("Erasing sectors");
+        displayText("Erasing sectors", TFT_YELLOW);
         eraseInitStruct.TypeErase = FLASH_TYPEERASE_SECTORS;
         if (HAL_FLASHEx_Erase(&eraseInitStruct, &sectorError) != HAL_OK) {
             char logBuffer[256];
             snprintf(logBuffer, sizeof(logBuffer), "Error erasing flash. ERR %lu", sectorError);
-            displayText(logBuffer);
+            displayText(logBuffer, TFT_RED);
             logMessage(logBuffer);
             HAL_FLASH_Lock();
             return;
@@ -78,7 +78,7 @@ void flashFirmwareToInternalMemory() {
         if (HAL_FLASHEx_Erase(&eraseInitStruct, &sectorError) != HAL_OK) {
             char logBuffer[256];
             snprintf(logBuffer, sizeof(logBuffer), "Error erasing flash. ERR %lu", sectorError);
-            displayText(logBuffer);
+            displayText(logBuffer, TFT_RED);
             logMessage(logBuffer);
             HAL_FLASH_Lock();
             return;
@@ -91,7 +91,7 @@ void flashFirmwareToInternalMemory() {
     uint8_t buffer[256]; // Буфер для записи данных
 
     logMessage("Starting flash write...");
-    displayText("Writing");
+    displayText("Writing", TFT_YELLOW);
     while (file.available()) {
         size_t bytesRead = file.read(buffer, sizeof(buffer));
         bytesWritten += bytesRead;
@@ -110,10 +110,10 @@ void flashFirmwareToInternalMemory() {
             if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, data) != HAL_OK) {
                 char logBuffer[256];
                 snprintf(logBuffer, sizeof(logBuffer), "Error programming flash memory at address: 0x%" PRIX32, address);
-                displayText(logBuffer);
+                displayText(logBuffer, TFT_RED);
                 logMessage(logBuffer);
                 snprintf(logBuffer, sizeof(logBuffer), "Data: 0x%" PRIX32, data);
-                displayText(logBuffer);
+                displayText(logBuffer, TFT_RED);
                 logMessage(logBuffer);
                 HAL_FLASH_Lock();
                 return;
@@ -135,6 +135,7 @@ void flashFirmwareToInternalMemory() {
             char logBuffer[256];
             snprintf(logBuffer, sizeof(logBuffer), "Progress: %d%%", progress);
             logMessage(logBuffer);
+            displayText(logBuffer);
         }
         #endif
     }
@@ -150,9 +151,7 @@ void writemarker(const char *data, uint32_t startAddress, uint32_t endAddress) {
 
     // Проверка на переполнение памяти
     if ((address + length - 1) > endAddress) {
-        tft.setTextColor(TFT_RED);
-        displayText("Error: Data exceeds flash boundary.");
-        tft.setTextColor(TFT_GREEN);
+        displayText("Error: Data exceeds flash boundary.", TFT_RED);
         return;
     }
 
@@ -166,9 +165,7 @@ void writemarker(const char *data, uint32_t startAddress, uint32_t endAddress) {
 
         // Запись 32-битного слова во флеш
         if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, word) != HAL_OK) {
-            tft.setTextColor(TFT_RED);
-            displayText("Error: Flash programming failed.");
-            tft.setTextColor(TFT_GREEN);
+            displayText("Error: Flash programming failed.", TFT_RED);
             HAL_FLASH_Lock();
             return;
         }
@@ -181,8 +178,7 @@ void writemarker(const char *data, uint32_t startAddress, uint32_t endAddress) {
 }
 
 void readmarker(uint32_t startAddress, uint32_t endAddress) {
-    tft.setTextColor(TFT_ORANGE);
-    displayText("reading version marker");
+    displayText("reading version marker", TFT_ORANGE);
     char buffer[256]; // Буфер для одной строки, которую будем передавать в displayText
     memset(buffer, 0, sizeof(buffer)); // Инициализация буфера нулями
 
@@ -195,8 +191,7 @@ void readmarker(uint32_t startAddress, uint32_t endAddress) {
 
         // Если буфер заполнился или достигнут конец диапазона, выводим строку и очищаем буфер
         if (static_cast<unsigned int>(len) >= sizeof(buffer) - 2 || address == endAddress) {
-            displayText(buffer);
-            tft.setTextColor(TFT_GREEN);
+            displayText(buffer, TFT_ORANGE);
             memset(buffer, 0, sizeof(buffer)); // Очистка буфера для следующего вывода
         }
 

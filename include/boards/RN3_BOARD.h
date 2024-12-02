@@ -56,7 +56,7 @@
                         #define BASE_ROTATION 1
                         // Определяем отступы
                         #define TOP_MARGIN    10
-                        #define BOTTOM_MARGIN 50
+                        #define BOTTOM_MARGIN 65
                         #define LEFT_MARGIN   10
                         #define LINE_HEIGHT   10 // Определяем высоту строки
             #endif

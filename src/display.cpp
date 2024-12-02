@@ -1,11 +1,14 @@
 #include "display.h"
 #include <TFT_eSPI.h>
+#include <deque>
 
 extern TFT_eSPI tft;
 extern uint16_t SCREEN_HEIGHT;
 extern uint16_t SCREEN_WIDTH;
 extern uint8_t BEEPSTATE;
+
 int currentLine = 0;
+std::deque<TextLine> textBuffer;
 
 void updateProgressBar(uint8_t percent, const char* customMessage) {
     #ifdef BOOTDISPLAY 
@@ -61,68 +64,90 @@ void updateProgressBar(uint8_t percent, const char* customMessage) {
     #endif 
 }
 
-void displayText(const char* text) {
-#ifdef BOOTDISPLAY
-    // Получаем высоту экрана
-    int screenHeight = tft.height();
-    
-    // Вычисляем количество строк, которые можно вывести на экран
-    int maxLines = (screenHeight - TOP_MARGIN - BOTTOM_MARGIN) / LINE_HEIGHT;
+void displayText(const char* text, uint16_t color) {
+    #ifdef BOOTDISPLAY
+        // Получаем высоту экрана и вычисляем количество строк
+        int screenHeight = tft.height();
+        int maxLines = (screenHeight - TOP_MARGIN - BOTTOM_MARGIN) / LINE_HEIGHT;
 
-    // Проверяем, не вышли ли за пределы экрана
-    if (currentLine >= maxLines) {
-        currentLine = 0; // Возвращаемся к первой строке
-    }
+        // Формируем строку с таймкодом и текстом
+        unsigned long timeSinceStart = millis();
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "[%lu] %s", timeSinceStart, text);
+        String newLine = String(buffer);
 
-    // Вычисляем позицию по Y для вывода текста
-    int yPos = TOP_MARGIN + currentLine * LINE_HEIGHT;
+        // Если буфер переполнен, смещаем текст вверх
+        if (textBuffer.size() >= maxLines) {
+            // Очищаем область всего текстового блока
+            for (size_t i = 0; i < textBuffer.size(); ++i) {
+                int yPos = TOP_MARGIN + i * LINE_HEIGHT;
+                tft.fillRect(LEFT_MARGIN, yPos, SCREEN_WIDTH - LEFT_MARGIN, LINE_HEIGHT, TFT_BLACK);
+            }
 
-    // Получаем время с момента запуска в миллисекундах
-    unsigned long timeSinceStart = millis();
+            // Удаляем верхнюю строку из буфера
+            textBuffer.pop_front();
+        }
 
-    // Формируем строку с временем
-    char buffer[256];
-    snprintf(buffer, sizeof(buffer), "[%lu] %s", timeSinceStart, text);
+        // Добавляем новую строку с цветом в буфер
+        textBuffer.push_back({newLine, color});
 
-    // Выводим текст на дисплей
-    tft.setCursor(LEFT_MARGIN, yPos);
-    tft.print(buffer);
+        // Перерисовываем все строки
+        for (size_t i = 0; i < textBuffer.size(); ++i) {
+            int yPos = TOP_MARGIN + i * LINE_HEIGHT;
 
-    // Переходим к следующей строке
-    currentLine++;
-#endif
+            // Разделяем таймкод и текст
+            int separatorIndex = textBuffer[i].text.indexOf(' ');
+            String timeCode = textBuffer[i].text.substring(0, separatorIndex);
+            String message = textBuffer[i].text.substring(separatorIndex + 1);
+
+            // Отображаем таймкод белым
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            tft.setCursor(LEFT_MARGIN, yPos);
+            tft.print(timeCode);
+
+            // Добавляем отступ в 1 пробел между таймкодом и текстом
+            tft.setCursor(LEFT_MARGIN + timeCode.length() * 6 + 6, yPos); // Смещаем начало текста после таймкода на 1 пробел (6 пикселей)
+
+            // Отображаем текст с цветом
+            tft.setTextColor(textBuffer[i].color, TFT_BLACK);
+            tft.print(message);
+        }
+    #endif
 }
 
-void beep(int count, int interval) {
-    if (BEEPSTATE == 1){
-        int beepCount = 0;
-        unsigned long previousMillis = 0;
-        bool isBeeping = false;
 
-        while (beepCount < count) {
-            unsigned long currentMillis = millis();
-  
-            if (isBeeping) {
-                // Проверяем, прошел ли интервал для выключения писка
-                if (currentMillis - previousMillis >= static_cast<unsigned long>(interval)) {
-                    digitalWrite(BEEPER, LOW);  // Выключаем пищалку
-                    previousMillis = currentMillis;  // Сохраняем текущее время
-                    isBeeping = false;  // Готовы к следующему писку
-                    beepCount++;  // Увеличиваем счетчик писков
-                }
-            } else {
-                // Проверяем, прошел ли интервал для включения следующего писка
-                if (currentMillis - previousMillis >= static_cast<unsigned long>(interval)) {
-                    if (beepCount < count) {
-                        digitalWrite(BEEPER, HIGH);  // Включаем пищалку
+void beep(int count, int interval) {
+    #ifdef BEEPER
+        if (BEEPSTATE == 1){
+            int beepCount = 0;
+            unsigned long previousMillis = 0;
+            bool isBeeping = false;
+
+            while (beepCount < count) {
+                unsigned long currentMillis = millis();
+    
+                if (isBeeping) {
+                    // Проверяем, прошел ли интервал для выключения писка
+                    if (currentMillis - previousMillis >= static_cast<unsigned long>(interval)) {
+                        digitalWrite(BEEPER, LOW);  // Выключаем пищалку
                         previousMillis = currentMillis;  // Сохраняем текущее время
-                        isBeeping = true;  // Начинаем новый писк
+                        isBeeping = false;  // Готовы к следующему писку
+                        beepCount++;  // Увеличиваем счетчик писков
+                    }
+                } else {
+                    // Проверяем, прошел ли интервал для включения следующего писка
+                    if (currentMillis - previousMillis >= static_cast<unsigned long>(interval)) {
+                        if (beepCount < count) {
+                            digitalWrite(BEEPER, HIGH);  // Включаем пищалку
+                            previousMillis = currentMillis;  // Сохраняем текущее время
+                            isBeeping = true;  // Начинаем новый писк
+                        }
                     }
                 }
             }
+        } else{
+            return;
         }
-    } else{
-        return;
-    }
+    #endif
 }
 // Реализация остальных функций...

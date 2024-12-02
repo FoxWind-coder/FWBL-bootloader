@@ -17,7 +17,6 @@
 #endif
 
 #ifdef BOOTLOADER
-    // #define WIFI
     // #define DEBUG
     #define WIFI_FILE "esp8266.bin"
     #define WIFIBACKUP "wifibackup.bin"
