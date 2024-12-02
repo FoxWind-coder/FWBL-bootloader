@@ -2,7 +2,9 @@
 
 #ifdef RN3_BOARD
 
-    #define INTERNAL_FLASH_START_ADDRESS 0x0800C000
+    #ifdef BOOTLOADER
+        #define INTERNAL_FLASH_START_ADDRESS 0x0800C000
+    #endif
 
     #ifdef WIFI
     #define SERIAL_PORT 2
@@ -84,6 +86,6 @@
             #define DEBUG_TX PB10
             #define SERIAL_BAUD 115200   
         #else
-            #define NDEBUG
+            // #define NDEBUG
         #endif
 #endif

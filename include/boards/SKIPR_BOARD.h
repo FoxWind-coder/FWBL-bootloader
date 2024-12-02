@@ -1,14 +1,15 @@
 #pragma once
 
-#if defined(SKIPR_BOARD)
+#ifdef SKIPR_BOARD
     #define SD_CS_PIN PC9
     #define SOFT_MISO_PIN PC11
     #define SOFT_MOSI_PIN PC12
     #define SOFT_SCK_PIN PC10
     #define SD_DET PC4
 
-    #define INTERNAL_FLASH_START_ADDRESS 0x0800C000
-
+    #ifdef BOOTLOADER
+        #define INTERNAL_FLASH_START_ADDRESS 0x0800C000
+    #endif
     #ifdef BOOTDISPLAY
         #define TFT_BL   PE11            // LED back-light control pin
         #define TFT_BACKLIGHT_ON HIGH  // Level to turn ON back-light (HIGH or LOW)
@@ -48,6 +49,6 @@
         #define DEBUG_TX PB10
         #define SERIAL_BAUD 115200   
     #else
-        #define NDEBUG
+        // #define NDEBUG
     #endif
 #endif

@@ -30,7 +30,7 @@
     #define BACKUPNAME "backup.bin"
     #define BACKUP_CURRENT "backup.CUR"
 
-    #ifndef INTERNAL_FLASH_START_ADDRESS && !defined(USBSERDBG) 
+    #if !defined(INTERNAL_FLASH_START_ADDRESS) && !defined(USBSERDBG) 
         #define INTERNAL_FLASH_START_ADDRESS 0x0800C000 //standart MKS 48KiB offset
         #warning "looks like your config contain errors. you need to define INTERNAL_FLASH_START_ADDRESS in board config!"
     #elif !defined(INTERNAL_FLASH_START_ADDRESS) && defined(USBSERDBG)
