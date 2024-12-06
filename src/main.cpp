@@ -10,6 +10,9 @@
 #include <USBSerial.h>
 #endif
 
+// #include "usbh_core.h"
+// #include "usbh_msc.h"
+
 #ifdef SPIFLASH
     #define FILE_NAME "spitest"
     #define BUFFER_SIZE 80
@@ -267,7 +270,10 @@ void setup() {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_ORANGE);
     tft.setCursor(0,0);
-    tft.print("With love by FoxWind ^_^");
+    displayNote("With love by FoxWind ^_^", 0, TFT_BLACK, TFT_ORANGE);
+    displayNote("A", 1, TFT_BLACK, TFT_RED);
+    displayNote("B", 2, TFT_BLACK, TFT_WHITE);
+    displayNote("C", 3, TFT_BLACK, TFT_GOLD);
     tft.setTextColor(TFT_GREEN);
     #ifndef SHUI
         displayText("builded as universal bootloader", TFT_BLUE);

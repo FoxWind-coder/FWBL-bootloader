@@ -100,7 +100,9 @@
     "*.bak": "c",
     "glcdfont.c": "cpp",
     "cstdio": "cpp",
-    "tft_espi_generic.c": "cpp"
+    "tft_espi_generic.c": "cpp",
+    "usbd_core.h": "c",
+    "usbd_desc.h": "c"
   },
   "cmake.configureOnOpen": false
 }

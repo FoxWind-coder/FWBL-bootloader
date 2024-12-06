@@ -11,8 +11,12 @@ struct TextLine {
     uint16_t color;
 };
 
-void updateProgressBar(uint8_t percent, const char* customMessage = nullptr);
+void updateProgressBar(uint8_t percent, const char* customMessage = nullptr, uint16_t barColor = TFT_GREEN, uint16_t textColor = TFT_GREEN);
 void displayText(const char* text, uint16_t color = TFT_GREEN);
 void beep(int count, int interval);
+void displayNote(const char* format, int cellIndex, uint16_t cellColor = TFT_BLACK, uint16_t textColor = TFT_WHITE);
+
+
+
 
 #endif
